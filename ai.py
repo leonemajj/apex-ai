@@ -1,23 +1,22 @@
 import os
 import google.generativeai as genai
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # 追加: アプリからのアクセスを許可するため
+from flask_cors import CORS
 from dotenv import load_dotenv
 import json
 
-# .env ファイルから環境変数をロード (ローカル開発用)
+# .env ファイルから環境変数をロード
 load_dotenv()
 
 app = Flask(__name__)
 
-# 追加: CORS設定 (すべてのオリジンからのアクセスを許可)
+# CORS設定
 CORS(app)
 
 # Gemini APIキーを設定
-# Renderの環境変数設定から読み込まれます
 api_key = os.environ.get("GEMINI_API_KEY")
+# キーがない場合にログに残す
 if not api_key:
-    # キーがない場合にログに残す（デバッグ用）
     print("Warning: GEMINI_API_KEY not found in environment variables.")
 
 genai.configure(api_key=api_key)
@@ -30,7 +29,7 @@ common_safety_settings = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
 ]
 
-# モデルの生成設定
+# モデルの生成設定（デフォルト）
 default_generation_config = {
     "temperature": 0.7,
     "top_p": 0.95,
@@ -38,7 +37,7 @@ default_generation_config = {
     "max_output_tokens": 30000,
 }
 
-# 統合されたGenerativeModelインスタンス
+# AIモデルの初期化
 ai_model = genai.GenerativeModel(
     model_name="gemini-pro",
     safety_settings=common_safety_settings,
@@ -48,10 +47,18 @@ ai_model = genai.GenerativeModel(
 def _extract_json_from_response(raw_text):
     """Geminiの応答からJSONコードブロックを抽出するヘルパー関数"""
     raw_text = raw_text.strip()
-    if raw_text.startswith("```json") and raw_text.endswith("```"):
-        return raw_text[len("```json"):-len("```")].strip()
-    if raw_text.startswith("json") and raw_text.endswith(""):
-        return raw_text[len("json"):-len("")].strip()
+    # コードブロック ```json ... ``` を除去
+    if raw_text.startswith("```json"):
+        raw_text = raw_text[len("```json"):].strip()
+    if raw_text.startswith("```"):
+        raw_text = raw_text[len("```"):].strip()
+    if raw_text.endswith("```"):
+        raw_text = raw_text[:-len("```")].strip()
+    
+    # 念のため json という文字単体で始まっている場合の処理
+    if raw_text.lower().startswith("json"):
+        raw_text = raw_text[4:].strip()
+        
     return raw_text
 
 @app.route('/generate_workout_plan', methods=['POST'])
@@ -204,7 +211,8 @@ def generate_meal_plan_api():
         必ずJSON形式で出力し、他のテキストや説明は含めないでください。
         """
 
-        current_config = ai_model.generation_config.copy()
+        # 【修正箇所】ai_modelからではなく、最初に定義した変数からコピーする
+        current_config = default_generation_config.copy()
         current_config["max_output_tokens"] = 30000
         current_config["temperature"] = 0.6
 
@@ -218,9 +226,5 @@ def generate_meal_plan_api():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Renderなどのクラウド環境では環境変数 PORT が割り当てられるためそれを使う
-    # ローカルでは 5001 を使う
     port = int(os.environ.get('PORT', 5001))
-    
-    # debug=False にする（本番環境でのセキュリティのため）
     app.run(debug=False, host='0.0.0.0', port=port)
