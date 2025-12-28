@@ -31,7 +31,7 @@ google-api-python-client==2.181.0
 google-auth==2.40.3
 google-auth-httplib2==0.2.0
 google-genai==1.49.0
-google-generativeai>=0.7.0
+google-generativeai>=0.8.3
 googleapis-common-protos==1.70.0
 grpcio==1.74.0
 grpcio-status==1.71.2
