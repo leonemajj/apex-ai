@@ -61,6 +61,10 @@ def _extract_json_from_response(raw_text):
         
     return raw_text
 
+@app.route('/', methods=['GET'])
+def home():
+    return "Hello, Apex AI is running!", 200
+
 @app.route('/generate_workout_plan', methods=['POST'])
 def generate_workout_plan_api():
     try:
