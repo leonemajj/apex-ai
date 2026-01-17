@@ -45,7 +45,7 @@ default_generation_config = {
 
 # AIモデルの初期化
 ai_model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-pro",
     safety_settings=common_safety_settings,
     generation_config=default_generation_config
 )
