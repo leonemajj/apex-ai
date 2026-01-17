@@ -15,14 +15,13 @@ CORS(app)
 
 # Gemini APIキーを設定
 api_key = os.environ.get("GEMINI_API_KEY")
+
 if api_key:
-    # キーの最初の5文字と、最後の5文字だけをログに出す（セキュリティのため）
-    print(f"★DEBUG: Loaded API Key: {api_key[:5]}...{api_key[-5:]}")
-    print(f"★DEBUG: Key Length: {len(api_key)}")
+    print(f"★KEY CHECK: Start={api_key[:5]}... End={api_key[-5:]} Length={len(api_key)}")
 else:
-    print("★DEBUG: API Key is NONE (Not found!)")
-# キーがない場合にログに残す
+    print("★KEY CHECK: API Key is NONE (空っぽです！)")
 if not api_key:
+
     print("Warning: GEMINI_API_KEY not found in environment variables.")
 
 genai.configure(api_key=api_key)
