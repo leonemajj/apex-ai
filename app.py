@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Gemini APIキーを設定
-api_key = os.environ.get("GEMINI_API_KEY")
+api_key = AIzaSyDqZAhYiFzbKe89IHk6spFuJoDNCcZ44Qo
 
 if api_key:
     print(f"★KEY CHECK: Start={api_key[:5]}... End={api_key[-5:]} Length={len(api_key)}")
