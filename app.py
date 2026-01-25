@@ -9,21 +9,15 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
-
 # CORS設定
 CORS(app)
 
-# Gemini APIキーを設定
-api_key ="AIzaSyDqZAhYiFzbKe89IHk6spFuJoDNCcZ44Qo"
+# ==========================================
+# 【重要】合格したAPIキー（直接書き込み）
+api_key = "AIzaSyDqZAhYiFzbKe89IHk6spFuJoDNCcZ44Qo"
+# ==========================================
 
-if api_key:
-    print(f"★KEY CHECK: Start={api_key[:5]}... End={api_key[-5:]} Length={len(api_key)}")
-else:
-    print("★KEY CHECK: API Key is NONE (空っぽです！)")
-if not api_key:
-
-    print("Warning: GEMINI_API_KEY not found in environment variables.")
-
+# APIキーをセット
 genai.configure(api_key=api_key)
 
 # 共通の安全設定
@@ -34,7 +28,7 @@ common_safety_settings = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
 ]
 
-# モデルの生成設定（デフォルト）
+# モデルの生成設定
 default_generation_config = {
     "temperature": 0.7,
     "top_p": 0.95,
@@ -42,7 +36,7 @@ default_generation_config = {
     "max_output_tokens": 30000,
 }
 
-# AIモデルの初期化
+# AIモデルの初期化（最新の Flash モデル）
 ai_model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     safety_settings=common_safety_settings,
@@ -50,26 +44,24 @@ ai_model = genai.GenerativeModel(
 )
 
 def _extract_json_from_response(raw_text):
-    """Geminiの応答からJSONコードブロックを抽出するヘルパー関数"""
+    """JSON抽出用ヘルパー関数"""
     raw_text = raw_text.strip()
-    # コードブロック ```json ... ``` を除去
     if raw_text.startswith("```json"):
         raw_text = raw_text[len("```json"):].strip()
     if raw_text.startswith("```"):
         raw_text = raw_text[len("```"):].strip()
     if raw_text.endswith("```"):
         raw_text = raw_text[:-len("```")].strip()
-    
-    # 念のため json という文字単体で始まっている場合の処理
     if raw_text.lower().startswith("json"):
         raw_text = raw_text[4:].strip()
-        
     return raw_text
 
+# 1. トップページ（生存確認用）
 @app.route('/', methods=['GET'])
 def home():
     return "Hello, Apex AI is running!", 200
 
+# 2. ワークアウトプラン生成
 @app.route('/generate_workout_plan', methods=['POST'])
 def generate_workout_plan_api():
     try:
@@ -149,25 +141,25 @@ def generate_workout_plan_api():
 
         response = ai_model.generate_content(prompt)
         json_str = _extract_json_from_response(response.text)
-        workout_plan = json.loads(json_str)
-        return jsonify(workout_plan)
+        return jsonify(json.loads(json_str))
 
     except Exception as e:
-        print(f"Error generating workout plan: {e}")
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
+# 3. 食事プラン生成
 @app.route('/generate_meal_plan', methods=['POST'])
 def generate_meal_plan_api():
     try:
         data = request.json
         daily_calories = data.get('daily_calories')
-        pfc_ratio = data.get('pfc_ratio') # {'protein': 0.3, 'fat': 0.2, 'carbs': 0.5}
+        pfc_ratio = data.get('pfc_ratio')
         meal_count = data.get('meal_count', 3)
         is_premium = data.get('is_premium', False)
         past_meal_summary = data.get('past_meal_summary', '')
 
         if not daily_calories or not pfc_ratio:
-            return jsonify({"error": "daily_calories and pfc_ratio are required"}), 400
+             return jsonify({"error": "daily_calories and pfc_ratio are required"}), 400
 
         past_meal_prompt_part = ""
         if past_meal_summary:
@@ -219,19 +211,16 @@ def generate_meal_plan_api():
         ]
         必ずJSON形式で出力し、他のテキストや説明は含めないでください。
         """
-
-        # 【修正箇所】ai_modelからではなく、最初に定義した変数からコピーする
+        
+        # 設定をコピーして使用
         current_config = default_generation_config.copy()
-        current_config["max_output_tokens"] = 30000
-        current_config["temperature"] = 0.6
-
+        
         response = ai_model.generate_content(prompt, generation_config=current_config)
         json_str = _extract_json_from_response(response.text)
-        meal_plan = json.loads(json_str)
-        return jsonify(meal_plan)
+        return jsonify(json.loads(json_str))
 
     except Exception as e:
-        print(f"Error generating meal plan: {e}")
+        print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
