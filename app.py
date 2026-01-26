@@ -14,7 +14,7 @@ CORS(app)
 
 # ==========================================
 # 【重要】合格したAPIキー（直接書き込み）
-api_key = "AIzaSyDqZAhYiFzbKe89IHk6spFuJoDNCcZ44Qo"
+api_key = os.getenv("GEMINI_API_KEY")
 # ==========================================
 
 # APIキーをセット
@@ -38,7 +38,7 @@ default_generation_config = {
 
 # AIモデルの初期化（最新の Flash モデル）
 ai_model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="models/gemini-flash-latest",
     safety_settings=common_safety_settings,
     generation_config=default_generation_config
 )
